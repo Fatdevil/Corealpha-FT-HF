@@ -1,0 +1,40 @@
+name: Unpack CoreAlpha Adapter ZIP
+on:
+  push:
+    paths:
+      - "corealpha_end2end_v1_1.zip"
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip adapter ZIP
+        run: |
+          mkdir -p tmp
+          unzip -o corealpha_end2end_v1_1.zip -d tmp
+          rsync -a --delete tmp/corealpha_end2end_v1_1/backend/ .
+          rm -rf tmp corealpha_end2end_v1_1.zip
+
+      - name: Ensure .gitignore (Python)
+        run: |
+          cat > .gitignore <<'EOF'
+          __pycache__/
+          .venv/
+          .env
+          .pytest_cache/
+          *.pyc
+          .DS_Store
+          EOF
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ci/unpack-adapter
+          title: "chore: unpack adapter ZIP"
+          commit-message: "chore: unpack adapter ZIP to repo root"
+          body: |
+            This PR unpacks corealpha_end2end_v1_1.zip into the repository root (FastAPI adapter).
