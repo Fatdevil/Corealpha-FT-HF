@@ -1,5 +1,6 @@
 name: Unpack CoreAlpha Adapter ZIP
 on:
+  workflow_dispatch:
   push:
     paths:
       - "corealpha_end2end_v1_1.zip"
