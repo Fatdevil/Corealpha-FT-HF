@@ -1,23 +1,62 @@
 name: Unpack CoreAlpha Adapter ZIP
+
 on:
   workflow_dispatch:
   push:
+    branches: [ main ]
     paths:
       - "corealpha_end2end_v1_1.zip"
+
 permissions:
   contents: write
   pull-requests: write
+
 jobs:
   unpack:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Show root files (debug)
+        run: |
+          echo "Repo root:"
+          ls -la
+          echo "Any ZIPs?"
+          ls -la *.zip || true
+
+      - name: Check ZIP presence
+        id: checkzip
+        run: |
+          if [ -f corealpha_end2end_v1_1.zip ]; then
+            echo "present=true" >> $GITHUB_OUTPUT
+          else
+            echo "present=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Stop if ZIP is missing
+        if: steps.checkzip.outputs.present == 'false'
+        run: |
+          echo "::error::corealpha_end2end_v1_1.zip saknas i repo-roten. Ladda upp den och kör igen."
+          exit 1
+
       - name: Unzip adapter ZIP
         run: |
+          set -e
           mkdir -p tmp
           unzip -o corealpha_end2end_v1_1.zip -d tmp
-          rsync -a --delete tmp/corealpha_end2end_v1_1/backend/ .
+          echo "ZIP innehåll (djup 3):"
+          find tmp -maxdepth 3 -type d -print
+
+          # Vanliga strukturer:
+          if [ -d tmp/corealpha_end2end_v1_1/backend ]; then
+            rsync -a --delete tmp/corealpha_end2end_v1_1/backend/ .
+          elif [ -d tmp/backend ]; then
+            rsync -a --delete tmp/backend/ .
+          else
+            echo "::error::Hittade ingen 'backend/'-mapp i ZIP:en."
+            exit 1
+          fi
+
           rm -rf tmp corealpha_end2end_v1_1.zip
 
       - name: Ensure .gitignore (Python)
@@ -36,6 +75,7 @@ jobs:
         with:
           branch: ci/unpack-adapter
           title: "chore: unpack adapter ZIP"
-          commit-message: "chore: unpack adapter ZIP to repo root"
+          commit-message: "chore: unpack adapter ZIP into repo root"
           body: |
             This PR unpacks corealpha_end2end_v1_1.zip into the repository root (FastAPI adapter).
+          delete-branch: true
