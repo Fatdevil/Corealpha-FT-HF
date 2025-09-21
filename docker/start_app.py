@@ -5,8 +5,21 @@ import re
 import sys
 
 
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def ensure_packaged_modules():
+    """Make packaged app archives importable."""
+
+    for zip_path in REPO_ROOT.glob("*.zip"):
+        if zip_path.suffix != ".zip":
+            continue
+        if str(zip_path) not in sys.path:
+            sys.path.insert(0, str(zip_path))
+
+
 def find_fastapi_app():
-    repo = pathlib.Path(__file__).resolve().parents[1]
+    repo = REPO_ROOT
     candidates = []
     for py in repo.rglob("*.py"):
         try:
@@ -38,6 +51,8 @@ def main():
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8000"))
     reload_opt = os.getenv("UVICORN_RELOAD", "false").lower() == "true"
+
+    ensure_packaged_modules()
 
     if override:
         module, var = override.split(":")
