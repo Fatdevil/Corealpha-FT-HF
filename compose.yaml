@@ -1,0 +1,13 @@
+services:
+  adapter:
+    image: ghcr.io/${GITHUB_USER:-fatdevil}/corealpha-adapter:latest
+    ports: ["8000:8000"]
+    environment:
+      APP_MODULE: ${APP_MODULE:-corealpha_adapter.app:app}
+      HOST: 0.0.0.0
+      PORT: 8000
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
