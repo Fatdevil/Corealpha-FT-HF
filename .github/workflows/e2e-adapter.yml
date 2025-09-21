@@ -19,19 +19,46 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Start adapter container
+      - name: Prepare adapter image
         run: |
-          set -e
+          set -euo pipefail
           OWNER="${{ github.repository_owner }}"
           OWNER="$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')"
           IMAGE="ghcr.io/${OWNER}/corealpha-adapter:latest"
+          echo "Using image: $IMAGE"
           docker pull "$IMAGE"
-          docker run -d --rm --name ca-adapter -p 8000:8000 "$IMAGE"
+          docker rm -f ca-adapter 2>/dev/null || true
+          docker run -d --name ca-adapter -p 8000:8000 "$IMAGE"
+
+      - name: Wait for container readiness
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 10); do
+            if docker ps --format '{{.Names}}' | grep -qx 'ca-adapter'; then
+              echo "Container is running"; exit 0
+            fi
+            sleep 2
+          done
+          echo "ERROR: ca-adapter container never reached running state"
+          docker ps -a
+          docker logs ca-adapter || true
+          exit 1
+
+      - name: Check /healthz endpoint
+        run: |
+          set -euo pipefail
           echo "Waiting for /healthz ..."
           for i in $(seq 1 40); do
             code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/healthz || true)
             if [ "$code" = "200" ]; then
-              echo "OK: /healthz returned 200"; exit 0
+              echo "OK: /healthz returned 200"
+              exit 0
+            fi
+            if ! docker ps --format '{{.Names}}' | grep -qx 'ca-adapter'; then
+              echo "ERROR: ca-adapter container stopped before healthcheck succeeded"
+              docker ps -a
+              docker logs ca-adapter || true
+              exit 1
             fi
             sleep 2
           done
@@ -45,4 +72,6 @@ jobs:
 
       - name: Stop container
         if: always()
-        run: docker stop ca-adapter || true
+        run: |
+          docker stop ca-adapter || true
+          docker rm ca-adapter || true
