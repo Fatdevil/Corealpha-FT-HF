@@ -19,6 +19,9 @@ RUN pip install uvicorn fastapi
 # Copy source
 COPY . .
 
+# installera repo som paket
+RUN pip install -e .
+
 # Ensure start script is executable
 RUN chmod +x docker/start.sh
 

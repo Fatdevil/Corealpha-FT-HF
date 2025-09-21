@@ -11,7 +11,7 @@ pytest -q
 
 ### Run (Docker)
 ```
-docker run -p 8000:8000 ghcr.io/fatdevil/corealpha-adapter:latest
+docker run -e APP_MODULE="corealpha_adapter.app:app" -p 8000:8000 ghcr.io/fatdevil/corealpha-adapter:latest
 # eller bygg lokalt:
 docker build -t corealpha-adapter .
 docker run -p 8000:8000 corealpha-adapter
@@ -20,7 +20,7 @@ docker run -p 8000:8000 corealpha-adapter
 ### Env
 ```
 # sätt APP_MODULE om du vill peka explicit:
-# docker run -e APP_MODULE="core.main:app" -p 8000:8000 ghcr.io/fatdevil/corealpha-adapter:latest
+# docker run -e APP_MODULE="corealpha_adapter.app:app" -p 8000:8000 ghcr.io/fatdevil/corealpha-adapter:latest
 ```
 
 ### Frontend deploy (Vercel)
