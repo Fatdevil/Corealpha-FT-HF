@@ -1,1 +1,1 @@
-from . import health, summarize, sentiment, agent, vote
+from . import agent, health, sentiment, summarize, vote  # noqa: F401

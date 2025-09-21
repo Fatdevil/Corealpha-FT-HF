@@ -3,13 +3,13 @@ from datetime import datetime
 from typing import List
 
 from ..core.config import settings
-from ..models.types import (
-    SentimentReq,
-    SentimentResp,
-    Source,
-    SummarizeReq,
-    SummarizeResp,
-)
+from ..models import types as model_types
+
+SentimentReq = model_types.SentimentReq
+SentimentResp = model_types.SentimentResp
+Source = model_types.Source
+SummarizeReq = model_types.SummarizeReq
+SummarizeResp = model_types.SummarizeResp
 
 POS_WORDS = set(
     "strong beat growth surge upgrade raise record breakout resilient positive "
@@ -20,13 +20,17 @@ NEG_WORDS = set(
     "contract deteriorate decelerate".split()
 )
 
+
 class FinGPTRAGService:
     """
     Adapter mot FinGPT‑pipelines för:
       - Sammanfattning (RAG)
       - Sentiment
-    I dev-läge används stubbar (settings.USE_STUB_*). Byt till riktiga HTTP-anrop när FINGPT_BASE_URL sätts.
+
+    I dev-läge används stubbar (settings.USE_STUB_*).
+    Byt till riktiga HTTP-anrop när FINGPT_BASE_URL sätts.
     """
+
     def summarize(self, req: SummarizeReq) -> SummarizeResp:
         t0 = time.perf_counter()
         if settings.USE_STUB_SUMMARY or not settings.FINGPT_BASE_URL:
@@ -85,23 +89,17 @@ class FinGPTRAGService:
             return (text[:240] + "...") if len(text) > 240 else text
         if req.url:
             return f"Sammanfattning av {req.url}: (stub) – viktiga punkter extraheras här."
-        return f"Kort sammanfattning för {req.ticker or 'okänd'} – (stub) via FinGPT RAG i produktion."
+        return (
+            f"Kort sammanfattning för {req.ticker or 'okänd'} – (stub) via FinGPT RAG i produktion."
+        )
 
     def _stub_sentiment(self, texts: List[str]) -> float:
         pos = sum(
-            sum(
-                1
-                for word in text.lower().split()
-                if word.strip(".,!?\"'()") in POS_WORDS
-            )
+            sum(1 for word in text.lower().split() if word.strip(".,!?\"'()") in POS_WORDS)
             for text in texts
         )
         neg = sum(
-            sum(
-                1
-                for word in text.lower().split()
-                if word.strip(".,!?\"'()") in NEG_WORDS
-            )
+            sum(1 for word in text.lower().split() if word.strip(".,!?\"'()") in NEG_WORDS)
             for text in texts
         )
         if pos + neg == 0:
@@ -109,6 +107,7 @@ class FinGPTRAGService:
         score = (pos - neg) / (pos + neg)
         score = max(-0.9, min(0.9, score))
         return score
+
 
 _svc = FinGPTRAGService()
 

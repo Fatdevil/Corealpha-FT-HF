@@ -7,14 +7,10 @@ router = APIRouter()
 
 
 @router.post("/agent/propose", response_model=AgentProposalResp)
-def agent_propose(
-    req: AgentProposalReq, reg: AgentRegistry = Depends(get_agent_registry)
-):
+def agent_propose(req: AgentProposalReq, reg: AgentRegistry = Depends(get_agent_registry)):
     agent = reg.get(req.agent)
     if not agent:
-        raise HTTPException(
-            status_code=404, detail=f"Agent '{req.agent}' ej registrerad"
-        )
+        raise HTTPException(status_code=404, detail=f"Agent '{req.agent}' ej registrerad")
     return agent.propose(
         ticker=req.ticker,
         sentiment=req.sentiment,

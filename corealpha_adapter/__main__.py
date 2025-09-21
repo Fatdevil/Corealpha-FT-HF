@@ -5,9 +5,7 @@ from .app import app
 try:  # pragma: no cover - only executed when uvicorn is available
     import uvicorn
 except ModuleNotFoundError:  # pragma: no cover
-    raise SystemExit(
-        "uvicorn måste vara installerat för att köra 'python -m corealpha_adapter'."
-    )
+    raise SystemExit("uvicorn måste vara installerat för att köra 'python -m corealpha_adapter'.")
 
 
 if __name__ == "__main__":

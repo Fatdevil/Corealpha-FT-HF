@@ -7,7 +7,5 @@ router = APIRouter()
 
 
 @router.post("/summarize", response_model=SummarizeResp)
-def summarize(
-    req: SummarizeReq, svc: FinGPTRAGService = Depends(get_fingpt_service)
-):
+def summarize(req: SummarizeReq, svc: FinGPTRAGService = Depends(get_fingpt_service)):
     return svc.summarize(req)

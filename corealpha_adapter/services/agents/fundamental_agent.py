@@ -18,11 +18,7 @@ class FundamentalAgent(IAgent):
         rng = random.Random(hash(ticker + self.name) & 0xFFFFFFFF)
         pe = 15 + rng.random() * 30
         gm = 0.40 + rng.random() * 0.30
-        vote = (
-            "BUY"
-            if (gm > 0.55 and pe < 35)
-            else ("SELL" if (gm < 0.45 and pe > 28) else "HOLD")
-        )
+        vote = "BUY" if (gm > 0.55 and pe < 35) else ("SELL" if (gm < 0.45 and pe > 28) else "HOLD")
         conf = 0.5 + rng.random() * 0.4
         return AgentProposalResp(
             agent=self.name,

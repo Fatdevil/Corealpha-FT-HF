@@ -31,8 +31,6 @@ def test_flow():
                 "sentiment": sentiment["score"],
             },
         ).json()
-        proposals.append(
-            {key: proposal[key] for key in ["agent", "vote", "weight", "confidence"]}
-        )
+        proposals.append({key: proposal[key] for key in ["agent", "vote", "weight", "confidence"]})
     vote = client.post("/vote", json={"proposals": proposals}).json()
     assert vote["decision"] in ["BUY", "HOLD", "SELL"]

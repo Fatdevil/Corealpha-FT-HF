@@ -7,7 +7,5 @@ router = APIRouter()
 
 
 @router.post("/sentiment", response_model=SentimentResp)
-def sentiment(
-    req: SentimentReq, svc: FinGPTRAGService = Depends(get_fingpt_service)
-):
+def sentiment(req: SentimentReq, svc: FinGPTRAGService = Depends(get_fingpt_service)):
     return svc.sentiment(req)

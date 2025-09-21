@@ -18,11 +18,7 @@ class TechnicalAgent(IAgent):
         rng = random.Random(hash(ticker + self.name) & 0xFFFFFFFF)
         rsi = 35 + rng.random() * 40
         above = rng.random() > 0.45
-        vote = (
-            "BUY"
-            if (rsi > 55 and above)
-            else ("SELL" if (rsi < 45 and not above) else "HOLD")
-        )
+        vote = "BUY" if (rsi > 55 and above) else ("SELL" if (rsi < 45 and not above) else "HOLD")
         conf = 0.45 + rng.random() * 0.4
         return AgentProposalResp(
             agent=self.name,
