@@ -34,6 +34,18 @@ open http://localhost:8000/healthz
 # docker run -e APP_MODULE="corealpha_adapter.app:app" -p 8000:8000 ghcr.io/fatdevil/corealpha-adapter:latest
 ```
 
+### Security & limits
+
+| Variable | Description |
+| --- | --- |
+| `RATE_LIMIT` | Global limit per IP/API-nyckel, t.ex. `60/minute` eller `1000/hour`. |
+| `MAX_BODY_BYTES` | Max request body (ASGI-nivå). Default `1048576` (1 MiB). |
+| `TRUSTED_HOSTS` | Komma-separerad lista för Starlette TrustedHostMiddleware. |
+| `CSP` | Content-Security-Policy header, default `default-src 'self'`. |
+| `API_KEYS` | Aktiverar API-nyckelkrav (`X-API-Key: <key>` i request). |
+
+Alla värden kan sättas i `.env`; API-nycklar skickas som header `X-API-Key: <key>`.
+
 ### Frontend deploy (Vercel)
 ```
 # Lägg GitHub Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID

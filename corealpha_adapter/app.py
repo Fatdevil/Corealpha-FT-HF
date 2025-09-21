@@ -5,6 +5,18 @@ from typing import Set
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
+from secure import Secure
+from secure import headers as secure_headers
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.requests import Request as StarletteRequest
+from starlette.responses import Response
 
 ENV = os.getenv("ENV", "dev").lower()
 docs_url = None if ENV == "prod" else "/"
@@ -46,6 +58,81 @@ else:
         allow_credentials=False,
     )
 
+# --- Trusted hosts ---
+trusted_hosts = [h.strip() for h in os.getenv("TRUSTED_HOSTS", "").split(",") if h.strip()]
+if trusted_hosts:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)
+
+# --- HTTPS redirect in prod ---
+if ENV == "prod":
+    app.add_middleware(HTTPSRedirectMiddleware)
+
+# --- Security headers ---
+_secure = Secure(
+    hsts=secure_headers.StrictTransportSecurity(),
+    xfo=secure_headers.XFrameOptions().deny(),
+    xxp=secure_headers.XXSSProtection().set("1; mode=block"),
+    content=secure_headers.XContentTypeOptions(),
+    referrer=secure_headers.ReferrerPolicy(),
+)
+_CSP = os.getenv("CSP", "default-src 'self'")
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        resp: Response = await call_next(request)
+        _secure.framework.fastapi(resp)
+        resp.headers.setdefault("Content-Security-Policy", _CSP)
+        return resp
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+
+# --- Body size limit (ASGI nivå) ---
+
+
+class BodySizeLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, max_bytes: int):
+        super().__init__(app)
+        self.max_bytes = max_bytes
+
+    async def dispatch(self, request: Request, call_next):
+        mb = int(os.getenv("MAX_BODY_BYTES", str(self.max_bytes)))
+        body = await request.body()
+        if len(body) > mb:
+            return PlainTextResponse("Request entity too large", status_code=413)
+        request._body = body
+        return await call_next(request)
+
+
+app.add_middleware(BodySizeLimitMiddleware, max_bytes=int(os.getenv("MAX_BODY_BYTES", "1048576")))
+
+
+# --- Rate limiting ---
+
+
+def _rate_limit_key(request: StarletteRequest):
+    api_key = request.headers.get("x-api-key")
+    if api_key:
+        return api_key
+    return get_remote_address(request)
+
+
+limiter = Limiter(
+    key_func=_rate_limit_key,
+    default_limits=[os.getenv("RATE_LIMIT", "60/minute")],
+)
+
+
+@app.exception_handler(RateLimitExceeded)
+def _rate_limit_handler(request, exc):
+    return PlainTextResponse("Too Many Requests", status_code=429)
+
+
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
 # --- API-key auth (valfritt, aktiveras om API_KEYS inte är tom) ---
 _API_KEYS = _parse_env_set(os.getenv("API_KEYS", ""))
 
@@ -66,4 +153,4 @@ app.include_router(sentiment.router, tags=["sentiment"])
 app.include_router(agent.router, tags=["agent"])
 app.include_router(vote.router, tags=["vote"])
 
-__all__ = ["app", "api_key_guard"]
+__all__ = ["app", "api_key_guard", "limiter"]

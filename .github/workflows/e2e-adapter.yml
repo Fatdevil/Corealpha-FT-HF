@@ -1,0 +1,53 @@
+name: E2E Adapter
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build adapter image
+        run: docker build -t ghcr.io/fatdevil/corealpha-adapter:latest .
+
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Healthcheck
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/healthz >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Adapter failed healthcheck" >&2
+          docker compose logs
+          exit 1
+
+      - name: Exercise summarize + rate limit
+        run: |
+          ok=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" \
+              -d '{"text":"Hello world good up"}' http://localhost:8000/summarize)
+          test "$ok" = "200"
+
+          # flood 70 requests to trigger 429 when RATE_LIMIT=60/minute
+          fails=0
+          for i in $(seq 1 70); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" \
+                -d '{"text":"hello"}' http://localhost:8000/summarize)
+            if [ "$code" = "429" ]; then fails=$((fails+1)); fi
+          done
+          if [ "$fails" -lt 1 ]; then
+            echo "Expected at least one 429 due to rate limit"; exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down
