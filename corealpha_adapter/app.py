@@ -1,11 +1,15 @@
 """FastAPI application for the CoreAlpha adapter."""
 
 import os
+import time
+import uuid
 from typing import Set
 
-from fastapi import FastAPI, HTTPException, Request, status
+import structlog
+from fastapi import APIRouter, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from secure import Secure
 from secure import headers as secure_headers
 from slowapi import Limiter
@@ -132,6 +136,60 @@ def _rate_limit_handler(request, exc):
 
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
+
+
+# --- Structured logging (JSON) ---
+structlog.configure(
+    processors=[
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.JSONRenderer(),
+    ],
+)
+log = structlog.get_logger()
+
+
+# --- Request ID / Correlation ID ---
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        rid = request.headers.get("x-request-id") or str(uuid.uuid4())
+        start = time.time()
+        response: Response = await call_next(request)
+        dur_ms = int((time.time() - start) * 1000)
+        response.headers.setdefault("x-request-id", rid)
+        log.info(
+            "access",
+            method=request.method,
+            path=request.url.path,
+            status=response.status_code,
+            ms=dur_ms,
+            rid=rid,
+        )
+        return response
+
+
+app.add_middleware(RequestIDMiddleware)
+
+
+# --- Prometheus metrics ---
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", tags=["metrics"])
+
+
+# --- Readiness ---
+ready_router = APIRouter()
+
+
+@ready_router.get("/readyz")
+def readyz():
+    checks = {
+        "fingpt": True,
+    }
+    ok = all(checks.values())
+    return {"ok": ok, "checks": checks}
+
+
+# expose readiness endpoint
+app.include_router(ready_router, tags=["ready"])
 
 # --- API-key auth (valfritt, aktiveras om API_KEYS inte är tom) ---
 _API_KEYS = _parse_env_set(os.getenv("API_KEYS", ""))
