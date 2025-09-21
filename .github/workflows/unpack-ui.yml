@@ -1,0 +1,57 @@
+name: Unpack CoreAlpha UI ZIP
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "corealpha_ui_v1.zip"
+      - "corealpha_end2end_v1.zip"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine archive
+        id: archive
+        run: |
+          if [ -f corealpha_ui_v1.zip ]; then
+            echo "zip=corealpha_ui_v1.zip" >> "$GITHUB_OUTPUT"
+            echo "folder=corealpha_ui_v1" >> "$GITHUB_OUTPUT"
+          elif [ -f corealpha_end2end_v1.zip ]; then
+            echo "zip=corealpha_end2end_v1.zip" >> "$GITHUB_OUTPUT"
+            echo "folder=corealpha_end2end_v1" >> "$GITHUB_OUTPUT"
+          else
+            echo "No supported archive found" >&2
+            exit 1
+          fi
+
+      - name: Unpack archive into frontend/
+        run: |
+          set -euo pipefail
+          mkdir -p tmp
+          unzip -o "${{ steps.archive.outputs.zip }}" -d tmp
+          src_dir="tmp/${{ steps.archive.outputs.folder }}"
+          if [ -d "$src_dir/frontend" ]; then
+            rsync -a --delete "$src_dir/frontend/" frontend/
+          elif [ -d "$src_dir/ui" ]; then
+            rsync -a --delete "$src_dir/ui/" frontend/
+          else
+            rsync -a --delete "$src_dir/" frontend/
+          fi
+          rm -rf tmp "${{ steps.archive.outputs.zip }}"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ci/unpack-ui
+          title: "chore: unpack CoreAlpha UI ZIP"
+          commit-message: "chore: unpack CoreAlpha UI contents into frontend/"
+          body: |
+            This PR unpacks `${{ steps.archive.outputs.zip }}` into `frontend/`.
+            The source archive is deleted after the contents are synced.
