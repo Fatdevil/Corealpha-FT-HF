@@ -1,1 +1,5 @@
 # Runtime dependencies
+fastapi>=0.117.1
+pydantic>=2.11.0
+pydantic-settings>=2.10.0
+uvicorn>=0.36.0

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "corealpha-adapter"
+version = "0.1.0"
+description = "CoreAlpha FastAPI adapter"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.117.1",
+    "pydantic>=2.11.0",
+    "pydantic-settings>=2.10.0",
+    "uvicorn>=0.36.0",
+]
+
+[tool.setuptools]
+packages = ["corealpha_adapter"]
