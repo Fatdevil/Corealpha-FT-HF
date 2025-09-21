@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from ..app import api_key_guard
+from ..app import api_key_guard, limiter
 from ..schemas import AgentProposalRequest, AgentProposalResponse
 from ..services.agents.registry import AgentRegistry, get_agent_registry
 
@@ -8,7 +8,12 @@ router = APIRouter(dependencies=[Depends(api_key_guard)])
 
 
 @router.post("/agent/propose", response_model=AgentProposalResponse)
-def agent_propose(req: AgentProposalRequest, reg: AgentRegistry = Depends(get_agent_registry)):
+@limiter.limit("30/minute")
+def agent_propose(
+    req: AgentProposalRequest,
+    request: Request,
+    reg: AgentRegistry = Depends(get_agent_registry),
+):
     agent = reg.get(req.agent)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Agent '{req.agent}' ej registrerad")

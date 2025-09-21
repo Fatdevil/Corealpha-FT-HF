@@ -2,4 +2,6 @@
 fastapi>=0.117.1
 pydantic>=2.11.0
 pydantic-settings>=2.10.0
+slowapi==0.1.9
+secure==0.3.0
 uvicorn>=0.36.0
