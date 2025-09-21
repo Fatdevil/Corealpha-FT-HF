@@ -1,5 +1,9 @@
 # Corealpha-FT-HF
 
+![CI](https://github.com/Fatdevil/Corealpha-FT-HF/actions/workflows/ci.yml/badge.svg)
+![Lint](https://github.com/Fatdevil/Corealpha-FT-HF/actions/workflows/lint.yml/badge.svg)
+![E2E](https://github.com/Fatdevil/Corealpha-FT-HF/actions/workflows/e2e-adapter.yml/badge.svg)
+
 ## Dev setup (lint & tests)
 python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt -r requirements-dev.txt
@@ -16,6 +20,13 @@ docker run -e APP_MODULE="corealpha_adapter.app:app" -p 8000:8000 ghcr.io/fatdev
 docker build -t corealpha-adapter .
 docker run -p 8000:8000 corealpha-adapter
 ```
+
+### Run locally
+
+# with GHCR image
+cp .env.example .env
+docker compose up -d
+open http://localhost:8000/healthz
 
 ### Env
 ```
