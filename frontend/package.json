@@ -1,0 +1,15 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "CoreAlpha UI placeholder project.",
+  "main": "index.js",
+  "scripts": {
+    "lint": "echo \"Lint placeholder\"",
+    "test": "echo \"Test placeholder\"",
+    "build": "echo \"Build placeholder\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
