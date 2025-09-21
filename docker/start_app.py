@@ -17,7 +17,9 @@ def find_fastapi_app():
             m = re.search(r"(?m)^\s*([a-zA-Z_]\w*)\s*=\s*FastAPI\(", text)
             if m:
                 varname = m.group(1)
-                module = py.relative_to(repo).with_suffix("").as_posix().replace("/", ".")
+                module = (
+                    py.relative_to(repo).with_suffix("").as_posix().replace("/", ".")
+                )
                 candidates.append((module, varname))
     for module, varname in candidates:
         mod = importlib.import_module(module)
@@ -42,12 +44,16 @@ def main():
     else:
         module, var = find_fastapi_app()
         if not module:
-            print("No FastAPI app found. Set APP_MODULE='pkg.module:app'", file=sys.stderr)
+            print(
+                "No FastAPI app found. Set APP_MODULE='pkg.module:app'", file=sys.stderr
+            )
             sys.exit(1)
 
     import uvicorn  # type: ignore
 
-    uvicorn.run(f"{module}:{var}", host=host, port=port, reload=reload_opt, log_level="info")
+    uvicorn.run(
+        f"{module}:{var}", host=host, port=port, reload=reload_opt, log_level="info"
+    )
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 """Expose the packaged CoreAlpha adapter FastAPI app and ensure /healthz."""
+
 from __future__ import annotations
 
 import pathlib
@@ -16,7 +17,9 @@ if _zip_path.exists():
 
 try:
     from corealpha_end2end_v1_1.backend.app import app as _packaged_app  # type: ignore
-except Exception:  # pragma: no cover - packaged app might be unavailable in some contexts
+except (
+    Exception
+):  # pragma: no cover - packaged app might be unavailable in some contexts
     _packaged_app = None
 
 if _packaged_app is not None:

@@ -28,7 +28,12 @@ jobs:
           echo "Using image: $IMAGE"
           docker pull "$IMAGE"
           docker rm -f ca-adapter 2>/dev/null || true
-          docker run -d --name ca-adapter -p 8000:8000 "$IMAGE"
+          docker run \
+            -d \
+            --name ca-adapter \
+            -p 8000:8000 \
+            -e APP_MODULE=corealpha_end2end_v1_1.backend.app:app \
+            "$IMAGE"
 
       - name: Wait for container readiness
         run: |

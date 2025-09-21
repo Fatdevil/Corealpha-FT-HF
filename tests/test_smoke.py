@@ -31,7 +31,9 @@ def _find_app():
             m = re.search(r"(?m)^\s*([a-zA-Z_]\w*)\s*=\s*FastAPI\(", text)
             if m:
                 varname = m.group(1)
-                module = py.relative_to(repo).with_suffix("").as_posix().replace("/", ".")
+                module = (
+                    py.relative_to(repo).with_suffix("").as_posix().replace("/", ".")
+                )
                 candidates.append((module, varname))
     for module, varname in candidates:
         mod = importlib.import_module(module)
