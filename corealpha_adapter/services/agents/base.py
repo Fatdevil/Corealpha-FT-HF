@@ -1,7 +1,9 @@
+import hashlib
+import random
 from dataclasses import dataclass
 from typing import List, Literal, Optional, Protocol
 
-from ...models.types import AgentProposalResp
+from ...schemas import AgentProposalResponse
 
 
 @dataclass
@@ -23,4 +25,11 @@ class IAgent(Protocol):
         ticker: str,
         sentiment: Optional[float] = None,
         price: Optional[float] = None,
-    ) -> AgentProposalResp: ...
+    ) -> AgentProposalResponse: ...
+
+
+def deterministic_rng(*parts: str) -> random.Random:
+    """Return a reproducible RNG seeded via SHA-256."""
+    h = hashlib.sha256("|".join(parts).encode()).hexdigest()
+    seed = int(h[:16], 16)
+    return random.Random(seed)

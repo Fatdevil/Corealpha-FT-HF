@@ -1,8 +1,7 @@
-import random
 from typing import Optional
 
-from ...models.types import AgentProposalResp
-from .base import IAgent
+from ...schemas import AgentProposalResponse
+from .base import IAgent, deterministic_rng
 
 
 class FundamentalAgent(IAgent):
@@ -14,13 +13,13 @@ class FundamentalAgent(IAgent):
         ticker: str,
         sentiment: Optional[float] = None,
         price: Optional[float] = None,
-    ) -> AgentProposalResp:
-        rng = random.Random(hash(ticker + self.name) & 0xFFFFFFFF)
+    ) -> AgentProposalResponse:
+        rng = deterministic_rng(ticker, self.name)
         pe = 15 + rng.random() * 30
         gm = 0.40 + rng.random() * 0.30
         vote = "BUY" if (gm > 0.55 and pe < 35) else ("SELL" if (gm < 0.45 and pe > 28) else "HOLD")
         conf = 0.5 + rng.random() * 0.4
-        return AgentProposalResp(
+        return AgentProposalResponse(
             agent=self.name,
             vote=vote,
             weight=self.default_weight,
