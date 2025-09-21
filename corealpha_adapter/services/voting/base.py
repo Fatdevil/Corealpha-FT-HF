@@ -1,7 +1,7 @@
 from typing import Protocol
 
-from ...models.types import VoteReq, VoteResp
+from ...schemas import VoteRequest, VoteResponse
 
 
 class VotingEngine(Protocol):
-    def vote(self, req: VoteReq) -> VoteResp: ...
+    def vote(self, req: VoteRequest) -> VoteResponse: ...
