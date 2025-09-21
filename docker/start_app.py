@@ -1,4 +1,8 @@
-import pathlib, importlib, re, os, sys
+import importlib
+import os
+import pathlib
+import re
+import sys
 
 
 def find_fastapi_app():
@@ -10,21 +14,17 @@ def find_fastapi_app():
         except Exception:
             continue
         if "FastAPI(" in text:
-            m = re.search(r'(?m)^\s*([a-zA-Z_]\w*)\s*=\s*FastAPI\(', text)
+            m = re.search(r"(?m)^\s*([a-zA-Z_]\w*)\s*=\s*FastAPI\(", text)
             if m:
                 varname = m.group(1)
-                module = (
-                    py.relative_to(repo)
-                    .with_suffix("")
-                    .as_posix()
-                    .replace("/", ".")
-                )
+                module = py.relative_to(repo).with_suffix("").as_posix().replace("/", ".")
                 candidates.append((module, varname))
     for module, varname in candidates:
         mod = importlib.import_module(module)
         app = getattr(mod, varname, None)
         # Late import to avoid hard dep when scanning
         from fastapi import FastAPI  # type: ignore
+
         if isinstance(app, FastAPI):
             return module, varname
     return None, None
@@ -47,9 +47,7 @@ def main():
 
     import uvicorn  # type: ignore
 
-    uvicorn.run(
-        f"{module}:{var}", host=host, port=port, reload=reload_opt, log_level="info"
-    )
+    uvicorn.run(f"{module}:{var}", host=host, port=port, reload=reload_opt, log_level="info")
 
 
 if __name__ == "__main__":
