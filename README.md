@@ -9,6 +9,8 @@ pytest -q
 
 ## Run & Deploy
 
+GET /healthz -> {"ok": true} för hälsokontroll. E2E-workflowen drar GHCR-imagen och verifierar endpointen.
+
 ### Run (Docker)
 ```
 docker run -p 8000:8000 ghcr.io/fatdevil/corealpha-adapter:latest
