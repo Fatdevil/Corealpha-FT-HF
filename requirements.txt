@@ -2,6 +2,8 @@
 fastapi>=0.117.1
 pydantic>=2.11.0
 pydantic-settings>=2.10.0
-slowapi==0.1.9
+prometheus-fastapi-instrumentator==6.1.0
 secure==0.3.0
-uvicorn>=0.36.0
+slowapi==0.1.9
+structlog==24.1.0
+uvicorn[standard]==0.30.6

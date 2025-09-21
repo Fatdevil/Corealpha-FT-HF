@@ -31,6 +31,11 @@ jobs:
           docker compose logs
           exit 1
 
+      - name: Check /readyz and /metrics
+        run: |
+          test "$(curl -fsSL -o /dev/null -w '%{http_code}' http://localhost:8000/readyz)" = "200"
+          curl -fsSL http://localhost:8000/metrics | grep -E 'http_request_duration_seconds' >/dev/null
+
       - name: Exercise summarize + rate limit
         run: |
           ok=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" \

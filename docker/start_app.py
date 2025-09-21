@@ -20,7 +20,15 @@ def main():
 
     import uvicorn
 
-    uvicorn.run(f"{module}:{var}", host=host, port=port, reload=reload_opt, log_level="info")
+    uvicorn.run(
+        f"{module}:{var}",
+        host=host,
+        port=port,
+        reload=reload_opt,
+        log_level="info",
+        access_log=False,
+        log_config=None,
+    )
 
 
 if __name__ == "__main__":

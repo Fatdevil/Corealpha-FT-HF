@@ -46,6 +46,13 @@ open http://localhost:8000/healthz
 
 Alla värden kan sättas i `.env`; API-nycklar skickas som header `X-API-Key: <key>`.
 
+### Observability
+
+- `/metrics` (Prometheus) – latency, fel och throughput via instrumentatorn.
+- `/health`, `/healthz` – liveness.
+- `/readyz` – readiness med externa beroenden (FinGPT stub).
+- JSON-strukturerade loggar med `x-request-id` i både headers och loggar.
+
 ### Frontend deploy (Vercel)
 ```
 # Lägg GitHub Secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
