@@ -6,4 +6,4 @@ prometheus-fastapi-instrumentator==6.1.0
 secure==0.3.0
 slowapi==0.1.9
 structlog==24.1.0
-uvicorn[standard]==0.30.6
+uvicorn[standard]==0.36.0
