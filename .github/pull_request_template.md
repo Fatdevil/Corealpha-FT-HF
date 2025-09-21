@@ -1,8 +1,8 @@
 ## What
-- 
+-
 
 ## Why
-- 
+-
 
 ## Tests
 - [ ] `pytest -q`
