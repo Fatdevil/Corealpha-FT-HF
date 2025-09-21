@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CoreAlpha — Insight & Signals (v1)</title>
+  <meta name="description" content="CoreAlpha Insight & Signals – FinGPT + Multi-Agent Voting UI prototype" />
+  <style>
+    /* ====== CSS VARIABLES / THEME ====== */
+    :root {
+      --bg: #0f1216;
+      --bg-elev: #141a21;
+      --panel: #0f141a;
+      --text: #e6eef7;
+      --muted: #9fb0c3;
+      --accent: #64b5ff;
+      --accent-2: #9d7dff;
+      --good: #18b37f;
+      --bad: #ff5a6f;
+      --warn: #ffc04d;
+      --border: #1f2a36;
+      --chip: #16202b;
+      --shadow: 0 10px 20px rgba(0,0,0,.35);
+      --radius: 14px;
+    }
+    [data-theme="light"] {
+      --bg: #f6f8fb;
+      --bg-elev: #ffffff;
+      --panel: #ffffff;
+      --text: #0c1926;
+      --muted: #506173;
+      --accent: #006ad4;
+      --accent-2: #6a42ff;
+      --good: #0f8f64;
+      --bad: #d33a4e;
+      --warn: #b27a00;
+      --border: #e4e9f1;
+      --chip: #eef3fb;
+      --shadow: 0 10px 20px rgba(12,25,38,.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 1200px at 80% -10%, rgba(100,181,255,.07), transparent 60%),
+                  radial-gradient(1000px 1000px at -10% 80%, rgba(157,125,255,.06), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      letter-spacing: .2px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 64px 1fr;
+      grid-template-areas: "sidebar topbar" "sidebar main";
+      height: 100vh;
+    }
+    /* ====== TOP BAR ====== */
+    .topbar {
+      grid-area: topbar;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+      backdrop-filter: blur(6px);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px; font-weight: 700;
+      letter-spacing: .4px;
+    }
+    .logo-badge {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid; place-items: center; color: white; font-weight: 800;
+      box-shadow: var(--shadow);
+    }
+    .search {
+      flex: 1;
+      display: flex; gap: 8px; align-items: center;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px 12px;
+    }
+    .search input {
+      flex: 1; border: 0; background: transparent; color: var(--text); outline: none;
+    }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .btn, button {
+      border: 1px solid var(--border); background: var(--bg-elev); color: var(--text);
+      padding: 8px 12px; border-radius: 10px; cursor: pointer;
+    }
+    .btn:hover, button:hover { filter: brightness(1.05); }
+    .primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: 0; color: #fff; }
+    .danger { background: var(--bad); border: 0; color: #fff;}
+    .chip {
+      padding: 4px 8px; border-radius: 999px; background: var(--chip); color: var(--text);
+      border: 1px solid var(--border); font-size: 12px;
+    }
+    /* ====== SIDEBAR ====== */
+    .sidebar {
+      grid-area: sidebar;
+      display: flex; flex-direction: column;
+      border-right: 1px solid var(--border);
+      padding: 12px;
+      gap: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 20%);
+    }
+    .nav {
+      display: grid; gap: 6px;
+    }
+    .nav button {
+      text-align: left;
+      padding: 10px 12px; border-radius: 10px; border: 1px solid transparent;
+      background: transparent; color: var(--muted);
+    }
+    .nav button:hover { background: var(--bg-elev); color: var(--text); border-color: var(--border); }
+    .nav button.active { background: var(--bg-elev); border-color: var(--border); color: var(--text); }
+    .sidebar .section-title { color: var(--muted); font-weight: 700; margin: 8px 4px 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .9px; }
+    .watchlist {
+      display: grid; gap: 6px; max-height: 36vh; overflow: auto; padding-right: 4px;
+    }
+    .watch-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel);
+    }
+    .watch-item .spark { width: 88px; height: 28px; }
+    /* ====== MAIN ====== */
+    .main {
+      grid-area: main;
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 16px; padding: 16px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .panel h3 { margin: 0 0 8px; font-size: 16px; }
+    .feed { display: grid; gap: 10px; }
+    .card {
+      display: grid; gap: 8px; border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--bg-elev);
+    }
+    .card .meta { display: flex; gap: 8px; color: var(--muted); font-size: 12px; align-items: center; }
+    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .grow { flex: 1; }
+    .tag { background: var(--chip); border: 1px solid var(--border); border-radius: 999px; padding: 4px 8px; font-size: 12px; }
+    .gauge {
+      --p: 62;
+      width: 64px; height: 64px; border-radius: 50%;
+      background:
+        conic-gradient(var(--good) calc(var(--p)*1%), rgba(255,255,255,.08) 0);
+      display: grid; place-items: center; color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .gauge span { font-weight: 700; }
+    .sentiment-bar {
+      --s: 0.2; /* -1..1 mapped to 0..1 */
+      height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--bad), var(--warn), var(--good));
+      position: relative; overflow: hidden; border: 1px solid var(--border);
+    }
+    .sentiment-bar::after {
+      content: "";
+      position: absolute; top: -2px; width: 2px; height: 12px;
+      left: calc(var(--s) * 100%);
+      background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.2);
+    }
+    .agent-list { display: grid; gap: 8px; }
+    .agent {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+      border: 1px solid var(--border); background: var(--bg-elev); border-radius: 10px; padding: 10px;
+    }
+    .agent .weights { display: flex; align-items: center; gap: 6px; }
+    .weight-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); opacity: .7; }
+    .explain {
+      display: grid; gap: 6px; font-size: 13px; color: var(--muted);
+      border-top: 1px dashed var(--border); padding-top: 8px;
+    }
+    .sources { display: flex; gap: 6px; flex-wrap: wrap; }
+    .modal {
+      position: fixed; inset: 0; display: none; place-items: center; background: rgba(0,0,0,.55);
+      z-index: 99;
+    }
+    .modal.open { display: grid; }
+    .modal .dialog { width: min(920px, 92vw); max-height: 85vh; overflow: auto; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+    .dialog h3 { margin-top: 0; }
+    .keyvals { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .kv { display: grid; gap: 4px; border: 1px dashed var(--border); border-radius: 10px; padding: 10px; background: var(--bg-elev); }
+    .kv .k { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .kv .v { font-weight: 600; }
+    .flex { display: flex; gap: 8px; align-items: center; }
+    .right { margin-left: auto; }
+    .footer {
+      font-size: 12px; color: var(--muted); padding: 8px 16px; border-top: 1px solid var(--border);
+      display: flex; gap: 8px; align-items: center; justify-content: space-between;
+    }
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 64px 1fr; }
+      .sidebar .hide-sm { display: none; }
+      .nav button { padding: 10px; }
+      .main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app" data-theme="dark" aria-live="polite">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" aria-label="Primär navigering">
+      <div class="section-title hide-sm">CoreAlpha</div>
+      <div class="nav" role="navigation">
+        <button class="active" data-route="feed" aria-current="page">📈 Insight Feed</button>
+        <button data-route="watchlist">⭐ Watchlist</button>
+        <button data-route="voting">🧠 Agent Votes</button>
+        <button data-route="portfolios">📊 Simulerade Portföljer</button>
+        <button data-route="alerts">⏰ Alerts</button>
+        <button data-route="settings">⚙️ Inställningar</button>
+      </div>
+      <div class="section-title hide-sm">Watchlist</div>
+      <div id="watchlist" class="watchlist" role="list"></div>
+      <div class="footer hide-sm">
+        <span>⚠️ Ej investeringsråd.</span>
+      </div>
+    </aside>
+
+    <!-- TOPBAR -->
+    <header class="topbar" role="banner">
+      <div class="logo" aria-label="CoreAlpha">
+        <div class="logo-badge" aria-hidden="true">CA</div>
+        <span class="hide-sm">CoreAlpha – Insight & Signals</span>
+      </div>
+      <div class="search" role="search" aria-label="Sök ticker">
+        <span>🔎</span>
+        <input id="tickerSearch" placeholder="Sök ticker… (AAPL, NVDA, ERIC, VOLV)" aria-label="Sök ticker" />
+        <button id="addToWatch" class="btn">Lägg till</button>
+      </div>
+      <div class="top-actions">
+        <button id="themeToggle" class="btn" aria-pressed="false">🌓 Tema</button>
+        <button id="newInsight" class="primary">+ Ny insikt</button>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main" id="main" role="main">
+      <section class="panel" aria-label="Insiktsflöde">
+        <h3>Insight Feed</h3>
+        <div id="feed" class="feed" role="list"></div>
+      </section>
+      <section class="panel" aria-label="Detaljer">
+        <h3>Detaljer & Förklaringar</h3>
+        <div id="details">
+          <p class="muted">Välj en insikt för att se sammanfattning, sentiment, sannolikheter och agentröster.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: ExplainVar -->
+  <div id="explainModal" class="modal" role="dialog" aria-modal="true" aria-label="ExplainVar detaljer">
+    <div class="dialog">
+      <div class="flex">
+        <h3>ExplainVar – variabler & viktning</h3>
+        <button class="btn right" onclick="UI.closeModal()">Stäng</button>
+      </div>
+      <div id="explainBody"></div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Mock Data =====
+    const MOCK = (() => {
+      const now = new Date();
+      const ago = (mins) => new Date(now.getTime() - mins*60000).toISOString();
+      return {
+        watchlist: [
+          { ticker: "AAPL", price: 222.12, chg: +0.8, spark: [220,221,219,224,222,223,222] },
+          { ticker: "NVDA", price: 121.55, chg: -1.2, spark: [128,127,129,125,124,123,121] },
+          { ticker: "ERIC-B", price: 102.90, chg: +0.5, spark: [100,100.5,101,101.2,101.9,102.4,102.9] },
+          { ticker: "VOLV-B", price: 310.40, chg: +0.3, spark: [308,309,307,309,310,311,310.4] }
+        ],
+        insights: [
+          {
+            id: "i1",
+            ticker: "NVDA",
+            title: "Analyst upprepar 'Outperform' – höjd riktkurs",
+            time: ago(14),
+            tags: ["Analyst note", "Semi"],
+            summary: "Kort sammanfattning av analysen. Fokus på AI-datacenter och bruttomarginaler.",
+            impact: "Måttlig positiv",
+            sentiment: 0.68,
+            probUp48h: 0.62,
+            sources: [
+              {title: "Reuters", url: "#"},
+              {title: "Company IR", url: "#"},
+            ],
+            agents: [
+              {name: "Sentiment", vote: "BUY", weight: 0.24, rationale: "Positiv nyhetsdriven ton + social sentiment", features: ["Ton +0.68", "Momentum 20D ↑"]},
+              {name: "Fundamental", vote: "HOLD", weight: 0.20, rationale: "Hög värdering, stark marginal", features: ["PE 12m fwd 45x", "GM 76%"]},
+              {name: "Technical", vote: "BUY", weight: 0.18, rationale: "Breakout över MA50", features: ["MA20>MA50", "RSI 61"]},
+              {name: "Macro", vote: "HOLD", weight: 0.10, rationale: "Risk-on, men räntetrend osäker", features: ["MOVE↓", "10Y stabil"]},
+              {name: "PM / Risk", vote: "BUY", weight: 0.12, rationale: "Portföljbudget tillåter, låg korrelation", features: ["Korr<0.35", "DD-budget ok"]},
+            ]
+          },
+          {
+            id: "i2",
+            ticker: "ERIC-B",
+            title: "Q3 prelim – kostnadsdisciplin förbättrar FCF",
+            time: ago(45),
+            tags: ["Earnings", "Nordic"],
+            summary: "Ericsson indikerar bättre fritt kassaflöde tack vare lägre capex och förbättrade kontrakt.",
+            impact: "Positiv",
+            sentiment: 0.41,
+            probUp48h: 0.54,
+            sources: [
+              {title: "Pressmeddelande", url: "#"},
+              {title: "Dagens Industri", url: "#"},
+            ],
+            agents: [
+              {name: "Sentiment", vote: "BUY", weight: 0.18, rationale: "Neutral→svagt positiv ton", features: ["Ton +0.41"]},
+              {name: "Fundamental", vote: "BUY", weight: 0.22, rationale: "FCF-lyft", features: ["FCF trend", "Capex↓"]},
+              {name: "Technical", vote: "HOLD", weight: 0.14, rationale: "Motstånd nära", features: ["MA50≈pris", "RSI 52"]},
+              {name: "Macro", vote: "HOLD", weight: 0.10, rationale: "FX-risk USD/SEK", features: ["USD stark"]},
+              {name: "PM / Risk", vote: "BUY", weight: 0.12, rationale: "Position utrymme", features: ["DD-budget ok"]},
+            ]
+          },
+          {
+            id: "i3",
+            ticker: "AAPL",
+            title: "Rykte: nytt prenumerationspaket för tjänster",
+            time: ago(120),
+            tags: ["Rumour", "Consumer"],
+            summary: "Signal om bundling kan öka ARPU, men osäkerhet kring regulatoriska aspekter.",
+            impact: "Neutral→svagt positiv",
+            sentiment: 0.12,
+            probUp48h: 0.51,
+            sources: [
+              {title: "Bloomberg", url: "#"},
+              {title: "MacRumors", url: "#"},
+            ],
+            agents: [
+              {name: "Sentiment", vote: "HOLD", weight: 0.16, rationale: "Mixed coverage", features: ["Ton +0.12"]},
+              {name: "Fundamental", vote: "BUY", weight: 0.21, rationale: "Tjänste-ARPU→ upp", features: ["ARPU↑", "Gross margin stabil"]},
+              {name: "Technical", vote: "HOLD", weight: 0.14, rationale: "Range-bound", features: ["RSI 49", "MA20≈MA50"]},
+              {name: "Macro", vote: "HOLD", weight: 0.09, rationale: "Konsumenttryck", features: ["CPI core"]},
+              {name: "PM / Risk", vote: "HOLD", weight: 0.10, rationale: "Neutral riskbudget", features: ["DD-budget medel"]},
+            ]
+          }
+        ]
+      };
+    })();
+
+    // ===== Utilities =====
+    const fmtPct = (x) => (x*100).toFixed(0) + "%";
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const el = (sel) => document.querySelector(sel);
+
+    const UI = {
+      state: {
+        route: "feed",
+        theme: (localStorage.getItem("theme") || "dark"),
+        selectedInsight: null,
+        watchlist: JSON.parse(localStorage.getItem("watchlist") || "null") || MOCK.watchlist,
+      },
+      init() {
+        document.getElementById("app").setAttribute("data-theme", this.state.theme);
+        this.bind();
+        this.renderSidebar();
+        this.renderRoute("feed");
+        this.renderFeed(MOCK.insights);
+      },
+      bind() {
+        document.querySelectorAll(".nav button").forEach(btn => {
+          btn.addEventListener("click", () => this.renderRoute(btn.dataset.route));
+        });
+        document.getElementById("themeToggle").addEventListener("click", () => {
+          this.state.theme = this.state.theme === "dark" ? "light" : "dark";
+          document.getElementById("app").setAttribute("data-theme", this.state.theme);
+          localStorage.setItem("theme", this.state.theme);
+        });
+        document.getElementById("addToWatch").addEventListener("click", () => {
+          const t = document.getElementById("tickerSearch").value.trim().toUpperCase();
+          if (!t) return;
+          if (!this.state.watchlist.find(x => x.ticker === t)) {
+            this.state.watchlist.unshift({ ticker: t, price: 100 + Math.random()*50, chg: (Math.random()-.5)*2, spark: Array.from({length:7}, (_,i)=>100 + Math.sin(i)*2 + Math.random()*2) });
+            localStorage.setItem("watchlist", JSON.stringify(this.state.watchlist));
+            this.renderSidebar();
+          }
+          document.getElementById("tickerSearch").value = "";
+        });
+        document.getElementById("newInsight").addEventListener("click", () => {
+          alert("I verklig drift öppnar detta ett formulär för att hämta FinGPT-sammanfattning via /summarize och /sentiment.");
+        });
+        // Modal close on background click/ESC
+        const modal = document.getElementById("explainModal");
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) this.closeModal();
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") this.closeModal();
+        });
+      },
+      renderSidebar() {
+        const w = document.getElementById("watchlist");
+        w.innerHTML = "";
+        this.state.watchlist.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "watch-item";
+          const sign = item.chg >= 0 ? "+" : "";
+          div.innerHTML = `
+            <div class="flex" style="gap:10px">
+              <div class="chip" aria-label="Ticker">${item.ticker}</div>
+              <div class="flex" style="gap:6px; color: var(--muted)">
+                <strong>${item.price.toFixed(2)}</strong>
+                <span style="color:${item.chg>=0?'var(--good)':'var(--bad)'}">${sign}${item.chg.toFixed(1)}%</span>
+              </div>
+            </div>
+            <svg class="spark" viewBox="0 0 100 28" aria-hidden="true">${this.sparkPath(item.spark)}</svg>
+          `;
+          w.appendChild(div);
+        });
+      },
+      sparkPath(arr) {
+        const min = Math.min(...arr), max = Math.max(...arr);
+        const norm = arr.map((v,i) => {
+          const x = i * (100/(arr.length-1));
+          const y = 26 - ((v - min) / (max - min + 1e-6)) * 26;
+          return `${i===0?'M':'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+        }).join(" ");
+        return `<path d="${norm}" fill="none" stroke="currentColor" stroke-width="1.5"/>`;
+      },
+      renderRoute(route) {
+        this.state.route = route;
+        document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("active", b.dataset.route===route));
+        const main = document.getElementById("main");
+        if (route === "feed") {
+          main.innerHTML = `
+            <section class="panel">
+              <h3>Insight Feed</h3>
+              <div id="feed" class="feed"></div>
+            </section>
+            <section class="panel">
+              <h3>Detaljer & Förklaringar</h3>
+              <div id="details">
+                <p class="muted">Välj en insikt för att se sammanfattning, sentiment, sannolikheter och agentröster.</p>
+              </div>
+            </section>
+          `;
+          this.renderFeed(MOCK.insights);
+        } else if (route === "watchlist") {
+          main.innerHTML = `
+            <section class="panel">
+              <h3>Watchlist – översikt</h3>
+              <div id="watchPanel" class="feed"></div>
+            </section>
+            <section class="panel">
+              <h3>Snabbåtgärder</h3>
+              <div class="flex">
+                <button class="btn" onclick="alert('Importera tickers från CSV (stub)')">Importera CSV</button>
+                <button class="btn" onclick="UI.clearWatchlist()">Rensa</button>
+              </div>
+            </section>
+          `;
+          this.renderWatchPanel();
+        } else if (route === "voting") {
+          main.innerHTML = `
+            <section class="panel">
+              <h3>Agent Votes – live</h3>
+              <div id="votePanel" class="agent-list"></div>
+            </section>
+            <section class="panel">
+              <h3>Explain & Weights</h3>
+              <div id="voteExplain"><p class="muted">Välj en ticker i feeden för att se röster och förklaringar.</p></div>
+            </section>
+          `;
+          // If we had selected insight already, show its agents
+          if (this.state.selectedInsight) this.renderAgents(this.state.selectedInsight);
+        } else if (route === "portfolios") {
+          main.innerHTML = `
+            <section class="panel">
+              <h3>Simulerade AI-portföljer</h3>
+              <div class="feed" id="portPanel"></div>
+            </section>
+            <section class="panel">
+              <h3>Prestanda & Risk</h3>
+              <div id="portMetrics"></div>
+            </section>
+          `;
+          this.renderPortfolios();
+        } else if (route === "alerts") {
+          main.innerHTML = `
+            <section class="panel">
+              <h3>Alert Builder</h3>
+              <div class="card">
+                <div class="row">
+                  <label class="chip">Ticker</label>
+                  <input id="al_ticker" class="btn" placeholder="AAPL" style="min-width:120px">
+                  <label class="chip">Villkor</label>
+                  <select id="al_cond" class="btn">
+                    <option>Pris över</option>
+                    <option>Pris under</option>
+                    <option>Sentiment över</option>
+                    <option>Scenario upp 48h över</option>
+                  </select>
+                  <input id="al_value" class="btn" placeholder="t.ex. 125 / 0.6">
+                  <button class="primary" onclick="alert('Alert sparad (stub)')">Spara</button>
+                </div>
+                <p class="muted">I produktion kopplas detta till /alerts i backend samt push/e-post.</p>
+              </div>
+            </section>
+            <section class="panel">
+              <h3>Mina alerts</h3>
+              <div id="alertsList" class="feed">
+                <div class="card"><div class="row"><span class="chip">NVDA</span><span>Scenario upp 48h ≥ 0.60</span><span class="right chip">Aktiv</span></div></div>
+              </div>
+            </section>
+          `;
+        } else if (route === "settings") {
+          main.innerHTML = `
+            <section class="panel">
+              <h3>Inställningar</h3>
+              <div class="keyvals">
+                <div class="kv">
+                  <div class="k">Tema</div>
+                  <div class="v"><button class="btn" onclick="UI.toggleTheme()">Växla tema</button></div>
+                </div>
+                <div class="kv">
+                  <div class="k">LLM-server</div>
+                  <div class="v"><input class="btn" value="http://localhost:7860" /></div>
+                </div>
+                <div class="kv">
+                  <div class="k">Data-källor</div>
+                  <div class="v">Nyheter: TheNewsAPI (Dev). Priser: AlphaVantage (Dev).</div>
+                </div>
+                <div class="kv">
+                  <div class="k">UI-språk</div>
+                  <div class="v">
+                    <select class="btn"><option>Svenska</option><option>Engelska</option></select>
+                  </div>
+                </div>
+              </div>
+              <p class="muted">Denna prototyp visar hur FinGPT + agenter + VotingEngine/ExplainLayer kan presenteras i ett första live-släpp.</p>
+            </section>
+            <section class="panel">
+              <h3>Juridik</h3>
+              <p class="muted">Open-source (MIT) komponenter. Denna UI är demonstrativ. Innehållet utgör ej investeringsråd.</p>
+            </section>
+          `;
+        }
+      },
+      toggleTheme() {
+        document.getElementById("themeToggle").click();
+      },
+      renderFeed(insights) {
+        const feed = document.getElementById("feed");
+        feed.innerHTML = "";
+        insights.forEach(ins => {
+          const c = document.createElement("div");
+          c.className = "card";
+          const tags = ins.tags.map(t => `<span class="tag">${t}</span>`).join(" ");
+          c.innerHTML = `
+            <div class="row">
+              <span class="chip">${ins.ticker}</span>
+              <strong class="grow">${ins.title}</strong>
+              <div class="gauge" style="--p:${(ins.probUp48h*100).toFixed(0)}" title="Scenario: upp 48h">
+                <span>${fmtPct(ins.probUp48h)}</span>
+              </div>
+            </div>
+            <div class="meta">
+              <span>🕒 ${new Date(ins.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              <span>•</span>
+              <span>${tags}</span>
+              <span class="right chip">Impact: ${ins.impact}</span>
+            </div>
+            <div>${ins.summary}</div>
+            <div class="row" style="gap: 12px;">
+              <div class="grow">
+                <div class="k">Sentiment</div>
+                <div class="sentiment-bar" style="--s:${(ins.sentiment+1)/2}"></div>
+              </div>
+              <button class="btn" aria-label="Visa detaljer">Visa</button>
+              <button class="btn" aria-label="ExplainVar" data-ins="${ins.id}">ExplainVar</button>
+              <div class="sources">
+                ${ins.sources.map(s=>`<a class="chip" href="${s.url}">${s.title}</a>`).join(" ")}
+              </div>
+            </div>
+          `;
+          c.querySelector('button[aria-label="Visa"]').addEventListener("click", ()=> this.showDetails(ins));
+          c.querySelector('button[aria-label="ExplainVar"]').addEventListener("click", ()=> this.openExplain(ins));
+          feed.appendChild(c);
+        });
+        // select first by default
+        if (insights[0]) this.showDetails(insights[0]);
+      },
+      showDetails(ins) {
+        this.state.selectedInsight = ins;
+        const details = document.getElementById("details");
+        const votes = this.voteSummary(ins.agents);
+        details.innerHTML = `
+          <div class="row">
+            <span class="chip">${ins.ticker}</span>
+            <h3 class="grow">${ins.title}</h3>
+            <div class="gauge" style="--p:${(ins.probUp48h*100).toFixed(0)}">
+              <span>${fmtPct(ins.probUp48h)}</span>
+            </div>
+          </div>
+          <p>${ins.summary}</p>
+          <div class="row">
+            <div class="grow">
+              <div class="k">Sentiment</div>
+              <div class="sentiment-bar" style="--s:${(ins.sentiment+1)/2}"></div>
+            </div>
+            <div class="chip">Sammanlagd röst: <strong>${votes.decision}</strong></div>
+            <div class="chip" title="MetaWeight (proxy)">MetaW: ${votes.metaWeight.toFixed(2)}</div>
+          </div>
+          <div class="agent-list" id="agentList"></div>
+          <div class="explain">
+            <div class="k">Källor</div>
+            <div class="sources">
+              ${ins.sources.map(s=>`<a class="chip" href="${s.url}">${s.title}</a>`).join(" ")}
+            </div>
+          </div>
+        `;
+        this.renderAgents(ins);
+        // If on voting route, also populate sidebar panel
+        if (this.state.route === "voting") {
+          this.renderAgents(ins);
+        }
+      },
+      voteSummary(agents) {
+        // Simple WSUM: BUY=+1, HOLD=0, SELL=-1 times weight; MetaWeight proxy = sum weights agreeing with majority.
+        const score = agents.reduce((acc,a)=> acc + (a.vote==="BUY"?1:(a.vote==="SELL"?-1:0))*a.weight, 0);
+        const decision = score>0.05?"BUY":(score<-0.05?"SELL":"HOLD");
+        const maj = decision;
+        const metaW = agents.filter(a=>a.vote===maj).reduce((s,a)=>s+a.weight,0);
+        return { decision, score, metaWeight: metaW };
+      },
+      renderAgents(ins) {
+        const list = document.getElementById("agentList") || document.getElementById("votePanel");
+        if (!list) return;
+        list.innerHTML = "";
+        ins.agents.forEach(a => {
+          const row = document.createElement("div");
+          row.className = "agent";
+          row.innerHTML = `
+            <div>
+              <div class="row">
+                <strong>${a.name}</strong>
+                <span class="chip">Röst: ${a.vote}</span>
+                <span class="chip">Vikt: ${(a.weight*100).toFixed(0)}%</span>
+              </div>
+              <div class="explain">
+                <div>${a.rationale}</div>
+                <div class="row">${a.features.map(f=>`<span class="tag">${f}</span>`).join(" ")}</div>
+              </div>
+            </div>
+            <div class="weights" title="Viktvisualisering">
+              ${Array.from({length: Math.round(a.weight*10)}).map(()=>'<div class="weight-dot"></div>').join("")}
+            </div>
+          `;
+          list.appendChild(row);
+        });
+        const explainPanel = document.getElementById("voteExplain");
+        if (explainPanel) {
+          const vs = this.voteSummary(ins.agents);
+          explainPanel.innerHTML = `
+            <div class="card">
+              <div class="row">
+                <span class="chip">${ins.ticker}</span>
+                <strong class="grow">Sammanlagd röst: ${vs.decision}</strong>
+                <span class="chip">WSUM: ${vs.score.toFixed(2)}</span>
+                <span class="chip">MetaWeight: ${vs.metaWeight.toFixed(2)}</span>
+              </div>
+              <p class="muted">Denna panel kan kopplas till VotingEngine v1.5/v2.0 (WSUM/TOPSIS/MetaWeight) via /vote-endpoint.</p>
+            </div>
+          `;
+        }
+      },
+      openExplain(ins) {
+        const body = document.getElementById("explainBody");
+        body.innerHTML = `
+          <div class="keyvals">
+            <div class="kv"><div class="k">Ticker</div><div class="v">${ins.ticker}</div></div>
+            <div class="kv"><div class="k">Scenario (48h upp)</div><div class="v">${fmtPct(ins.probUp48h)}</div></div>
+            <div class="kv"><div class="k">Sentiment</div><div class="v">${ins.sentiment.toFixed(2)}</div></div>
+            <div class="kv"><div class="k">Impact</div><div class="v">${ins.impact}</div></div>
+          </div>
+          <h4>Agenters ExplainVar</h4>
+          <div class="feed">
+            ${ins.agents.map(a=>`
+              <div class="card">
+                <div class="row">
+                  <strong>${a.name}</strong>
+                  <span class="chip">Röst: ${a.vote}</span>
+                  <span class="chip">Vikt: ${(a.weight*100).toFixed(0)}%</span>
+                </div>
+                <div class="row">${a.features.map(f=>`<span class="tag">${f}</span>`).join(" ")}</div>
+                <div class="muted">${a.rationale}</div>
+              </div>
+            `).join("")}
+          </div>
+        `;
+        document.getElementById("explainModal").classList.add("open");
+      },
+      closeModal() {
+        document.getElementById("explainModal").classList.remove("open");
+      },
+      renderWatchPanel() {
+        const panel = document.getElementById("watchPanel");
+        panel.innerHTML = "";
+        this.state.watchlist.forEach(item => {
+          const c = document.createElement("div");
+          c.className = "card";
+          c.innerHTML = `
+            <div class="row">
+              <span class="chip">${item.ticker}</span>
+              <strong class="grow">${item.price.toFixed(2)}</strong>
+              <span style="color:${item.chg>=0?'var(--good)':'var(--bad)'}">${item.chg.toFixed(2)}%</span>
+            </div>
+            <svg class="spark" viewBox="0 0 100 28">${this.sparkPath(item.spark)}</svg>
+          `;
+          panel.appendChild(c);
+        });
+      },
+      clearWatchlist() {
+        this.state.watchlist = [];
+        localStorage.setItem("watchlist", JSON.stringify(this.state.watchlist));
+        this.renderSidebar();
+        this.renderRoute("watchlist");
+      },
+      renderPortfolios() {
+        const port = document.getElementById("portPanel");
+        const met = document.getElementById("portMetrics");
+        const portfolios = [
+          { name: "CA-Alpha (Momentum+Sentiment)", ret: 0.18, vol: 0.12, dd: -0.08, spark: [100,102,105,103,108,110,118] },
+          { name: "CA-Value (Fundamental+PM)", ret: 0.11, vol: 0.08, dd: -0.05, spark: [100,100,101,102,103,106,111] },
+          { name: "CA-Balanced", ret: 0.14, vol: 0.10, dd: -0.06, spark: [100,101,102,102,104,107,114] },
+        ];
+        port.innerHTML = portfolios.map(p=>`
+          <div class="card">
+            <div class="row">
+              <strong class="grow">${p.name}</strong>
+              <span class="chip">Avkastn: ${(p.ret*100).toFixed(0)}%</span>
+              <span class="chip">Vol: ${(p.vol*100).toFixed(0)}%</span>
+              <span class="chip">Max DD: ${(p.dd*100).toFixed(0)}%</span>
+            </div>
+            <svg class="spark" viewBox="0 0 100 28">${this.sparkPath(p.spark)}</svg>
+            <button class="btn" onclick="alert('Visa trades & daglig logg (stub)')">Visa logg</button>
+          </div>
+        `).join("");
+        met.innerHTML = `
+          <div class="card">
+            <p class="muted">Simulerade AI-portföljer körs live utan exekvering. När statistik stabiliserats kan vi öppna för Pro.</p>
+          </div>
+        `;
+      }
+    };
+
+    // Init
+    window.addEventListener("DOMContentLoaded", () => UI.init());
+  </script>
+</body>
+</html>
