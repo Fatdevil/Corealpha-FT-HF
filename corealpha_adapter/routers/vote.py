@@ -1,18 +1,36 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ..app import api_key_guard, limiter
+from ..core.config import settings
+from ..providers import BaseLLM, ProviderError
 from ..schemas import VoteRequest, VoteResponse
-from ..services.voting.base import VotingEngine
-from ..services.voting.factory import get_voting_engine
+from ..services.llm_router import get_provider
 
 router = APIRouter(dependencies=[Depends(api_key_guard)])
 
 
-@router.post("/vote", response_model=VoteResponse)
+PROVIDER_ERROR_RESPONSE = {
+    502: {
+        "description": "Upstream LLM provider error",
+        "content": {
+            "application/json": {
+                "example": {"error": "provider_error", "message": "Provider unavailable"}
+            }
+        },
+    }
+}
+
+
+@router.post("/vote", response_model=VoteResponse, responses=PROVIDER_ERROR_RESPONSE)
 @limiter.limit("30/minute")
-def vote(
+async def vote(
     req: VoteRequest,
     request: Request,
-    engine: VotingEngine = Depends(get_voting_engine),
+    provider: BaseLLM = Depends(get_provider),
 ):
-    return engine.vote(req)
+    try:
+        return await provider.vote(req)
+    except ProviderError as exc:
+        detail = {"error": exc.error_code, "message": str(exc)}
+        status_code = 502 if settings.ENV.lower() == "prod" else exc.status_code
+        raise HTTPException(status_code=status_code, detail=detail)

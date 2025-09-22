@@ -204,6 +204,14 @@ def api_key_guard(req: Request):
 
 
 from .routers import agent, health, sentiment, summarize, vote  # noqa: E402
+from .services import close_provider  # noqa: E402
+
+
+
+@app.on_event("shutdown")
+async def shutdown_providers():
+    await close_provider()
+
 
 app.include_router(health.router, tags=["health"])
 app.include_router(summarize.router, tags=["summarize"])

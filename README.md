@@ -34,6 +34,20 @@ open http://localhost:8000/healthz
 # docker run -e APP_MODULE="corealpha_adapter.app:app" -p 8000:8000 ghcr.io/fatdevil/corealpha-adapter:latest
 ```
 
+### Providers & Config
+
+Backendens LLM‑anrop går via ett utbytbart provider‑lager med FinGPT som default. Konfigurationen styrs via `.env`:
+
+| Variabel | Beskrivning |
+| --- | --- |
+| `LLM_PROVIDER` | `fingpt` (default) eller `openai` (stub). |
+| `FINGPT_BASE_URL` / `FINGPT_API_KEY` | Endpoint + nyckel mot FinGPT. Lämna tomt i dev för stubbar. |
+| `HTTP_TIMEOUT_SECONDS` | Per-request timeout för FinGPT-klienten. |
+| `HTTP_MAX_RETRIES` | Antal retries med backoff (0 = av). |
+| `CACHE_TTL_SECONDS` | In‑memory TTL-cache för identiska prompts/responser. |
+
+Fel från provider rapporteras med JSON `{ "error": <kod>, "message": <text> }`. I `ENV=prod` ges HTTP 502 (Bad Gateway) vid t.ex. `provider_timeout`, `provider_network` eller `provider_circuit_open` (circuit breaker efter 3 misslyckanden). Utan konfigurerad FinGPT fallback: stubbar som efterliknar tidigare beteende.
+
 ### Security & limits
 
 | Variable | Description |
