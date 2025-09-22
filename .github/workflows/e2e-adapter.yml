@@ -9,6 +9,9 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    env:
+      ENV: dev
+      LLM_PROVIDER: stub
 
     steps:
       - uses: actions/checkout@v4

@@ -1,5 +1,5 @@
 """Service layer helpers for the CoreAlpha adapter."""
 
-from .fingpt_service import FinGPTRAGService, get_fingpt_service
+from .llm_router import get_provider, reset_provider
 
-__all__ = ["FinGPTRAGService", "get_fingpt_service"]
+__all__ = ["get_provider", "reset_provider"]
