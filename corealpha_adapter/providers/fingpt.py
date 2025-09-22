@@ -11,11 +11,7 @@ from typing import Any, Dict, Tuple
 
 import httpx
 
-from .base import (
-    ProviderCircuitOpenError,
-    ProviderConfigurationError,
-    ProviderError,
-)
+from .base import ProviderCircuitOpenError, ProviderConfigurationError, ProviderError
 
 
 class FinGPTProvider:
@@ -74,7 +70,10 @@ class FinGPTProvider:
                 await self._record_success()
                 await self._store_cache(cache_key, data, now)
                 return data
-            except (httpx.HTTPStatusError, httpx.RequestError) as exc:  # pragma: no cover - defensive
+            except (
+                httpx.HTTPStatusError,
+                httpx.RequestError,
+            ) as exc:  # pragma: no cover - defensive
                 last_error = exc
                 await self._record_failure(now)
                 if attempt >= self._max_retries:
@@ -94,9 +93,7 @@ class FinGPTProvider:
         async with httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout) as client:
             return await client.post(path, json=payload, headers=headers)
 
-    async def _get_cached(
-        self, cache_key: Tuple[str, str], now: float
-    ) -> Dict[str, Any] | None:
+    async def _get_cached(self, cache_key: Tuple[str, str], now: float) -> Dict[str, Any] | None:
         async with self._lock:
             item = self._cache.get(cache_key)
             if not item:

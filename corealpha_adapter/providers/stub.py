@@ -96,9 +96,7 @@ class StubProvider:
 
         sources: List[Source] = []
         if url:
-            sources.append(
-                Source(title="Källa", url=url, time=datetime.utcnow().isoformat())
-            )
+            sources.append(Source(title="Källa", url=url, time=datetime.utcnow().isoformat()))
         if ticker:
             sources.append(
                 Source(
@@ -127,8 +125,7 @@ class StubProvider:
             avg_neg = sum(v["neg"] for v in vectors) / len(vectors)
             score = max(-0.9, min(0.9, avg_pos - avg_neg))
         rationale = (
-            "Lexikon‑baserad stub som räknar positiva/negativa ord och ger "
-            "ett poäng i [-1,1]."
+            "Lexikon‑baserad stub som räknar positiva/negativa ord och ger " "ett poäng i [-1,1]."
         )
         sources = [
             Source(title="Nyhet 1 (stub)", url="http://example.com/news1"),
