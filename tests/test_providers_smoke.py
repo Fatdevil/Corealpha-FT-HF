@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Tuple
@@ -10,8 +11,6 @@ import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
